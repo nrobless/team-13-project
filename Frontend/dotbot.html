@@ -1,0 +1,334 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+<meta charset="UTF-8" />
+<title>Dot Bot</title>
+<script type="text/javascript" src="/phaser-ce/build/phaser.js"></script>
+<style type="text/css">
+body {
+margin: auto;
+}
+</style>
+</head>
+<body>
+
+<script type="text/javascript">
+
+//Creates a new maze 
+class Maze extends Phaser.Group {
+
+	//if no values are given, the default is 10x10
+	constructor(cols = 10, rows = 10) {
+	super(game);
+
+	// cell width 
+	this.cw = 56;
+	// cell height 
+	this.ch = 54;
+
+
+
+	}
+
+
+//place an object in maze
+
+	placeObjectAt(xx, yy, obj) {
+		
+		obj.x = this.cw * yy +this.cw/2 + 20;
+		obj.y = this.ch * xx + this.ch / 2;
+		
+
+	}
+
+
+	drawGrid() {
+	this.graphics = game.add.graphics();
+	this.graphics.lineStyle(3, 0xff0000, 1);
+
+	for (var i = 20; i <= 580; i += this.cw) {
+		this.graphics.moveTo(i, 0);
+		this.graphics.lineTo(i, 540);
+	}
+	for (var i = 0; i <= 540; i += this.ch) {
+		this.graphics.moveTo(20, i);
+		this.graphics.lineTo(580, i);
+	}
+
+
+
+	}
+}
+
+var game = new Phaser.Game(600, 800, Phaser.AUTO, '', { preload: preload, create: create});
+var playerRow = 0, playerColumn = 0;
+var player;
+var maze;
+var downButton;
+var upButton;
+var leftButton;
+var rightButton;
+var goButton;
+var undoButton;
+var resetButton;
+var queueGrid;
+var moveQueue;
+
+
+
+function preload() {
+
+	game.load.image('goButton', 'gobutton.png');
+	game.load.image('undoButton', 'undo.png');
+	game.load.image('resetButton', 'reset.png');
+
+	game.load.image('downButton', 'down.png');
+	game.load.image('miniDown', 'minidown.png');
+
+	game.load.image('leftButton', 'left.png');
+	game.load.image('miniLeft', 'minileft.png');
+
+	game.load.image('upButton', 'up.png');
+	game.load.image('miniUp', 'miniup.png');
+
+	game.load.image('rightButton', 'right.png');
+	game.load.image('miniRight', 'miniright.png');
+
+
+}
+
+
+
+function create() {
+
+	game.stage.setBackgroundColor('#0000a5');
+
+	player = game.add.graphics(playerRow,playerColumn);
+	player.beginFill(0xffffff);
+	player.drawCircle(0,0,40);
+
+	maze = new Maze(10, 10);
+	maze.drawGrid();
+	maze.placeObjectAt(0,0,player);
+
+	goButton = game.add.button(410, 630, 'goButton', startMoves);
+	resetButton = game.add.button(60, 630, 'resetButton', resetQueue);
+	undoButton = game.add.button(235, 630, 'undoButton', undoMove);
+
+	downButton = game.add.button(320, 700, 'downButton', addMove);
+	upButton = game.add.button(220, 700, 'upButton', addMove);
+	leftButton = game.add.button(120, 700, 'leftButton', addMove);
+	rightButton = game.add.button(420, 700, 'rightButton', addMove);
+
+	queueGrid = game.add.graphics(17, 545);
+	queueGrid.beginFill(0x00004e);
+	queueGrid.drawRect(0, 0, 565, 80);
+
+	
+	moveQueue = game.add.group();
+
+}
+
+
+
+function addMove(){
+
+	if(moveQueue.length > 19)
+	{
+		return;
+	}
+
+	var currentSize = moveQueue.length;
+
+	if(this.key == 'downButton')
+	{
+		if(currentSize < 10)
+		{
+			moveQueue.create(56 * currentSize + 30, 550, 'miniDown');
+		}
+		else
+		{
+			moveQueue.create(56 * (currentSize - 10) + 30, 590, 'miniDown');
+		}
+	}
+
+	if(this.key == 'upButton')
+	{
+		if(currentSize < 10)
+		{
+			moveQueue.create(56 * currentSize + 30, 550, 'miniUp');
+		}
+		else
+		{
+			moveQueue.create(56 * (currentSize - 10) + 30, 590, 'miniUp');
+		}
+	}
+
+	if(this.key == 'leftButton')
+	{
+		if(currentSize < 10)
+		{
+			moveQueue.create(56 * currentSize + 30, 550, 'miniLeft');
+		}
+		else
+		{
+			moveQueue.create(56 * (currentSize - 10) + 30, 590, 'miniLeft');
+		}
+	}
+
+	if(this.key == 'rightButton')
+	{
+		if(currentSize < 10)
+		{
+			moveQueue.create(56 * currentSize + 30, 550, 'miniRight');
+		}
+		else
+		{
+			moveQueue.create(56 * (currentSize - 10) + 30, 590, 'miniRight');
+		}
+	}
+
+	
+	
+}
+
+var timer;
+
+function startMoves() {
+	
+	var currentMove;
+	timer = game.time.create(false);
+
+
+	for(var i = 0; i < moveQueue.length; i++)
+	{
+		currentMove = moveQueue.getChildAt(i);
+
+		if(currentMove.key == 'miniDown')
+		{
+			timer.loop(1000, moveDown, this);
+			timer.start();
+		}
+		else if(currentMove.key == 'miniUp')
+		{
+			timer.loop(1000, moveUp, this);
+			timer.start();
+		}
+		else if(currentMove.key == 'miniLeft')
+		{
+			timer.loop(1000, moveLeft, this);
+			timer.start();
+		}
+		else if(currentMove.key == 'miniRight')
+		{
+			timer.loop(1000, moveRight, this);
+			timer.start();
+		}
+
+		moveQueue.removeChild(moveQueue.getBottom());
+
+	}
+
+}
+
+
+function resetQueue() {
+	moveQueue.removeAll();
+	playerRow = 0;
+	playerColumn = 0;
+	maze.placeObjectAt(playerRow, playerColumn, player);
+}
+
+function undoMove() {
+
+	moveQueue.removeChild(moveQueue.getTop());
+}
+
+
+function moveDown(){
+	if(playerRow == 9)
+	{
+		//var timer = this.game.time.totalElapsedSeconds();
+		//var errorString = "Cannot move another row down.";
+		//game.debug.text(errorString, 48, 570);
+		playerRow = 0;
+		playerColumn = 0;
+		maze.placeObjectAt(playerRow, playerColumn, player);
+		moveQueue.removeAll();
+	}
+
+	else
+	{
+		playerRow += 1; 
+		maze.placeObjectAt(playerRow, playerColumn, player);
+	}
+
+}
+
+function moveUp(){
+	if(playerRow == 0)
+	{
+		//var timer = this.game.time.totalElapsedSeconds();
+		//var errorString = "Cannot move another row down.";
+		//game.debug.text(errorString, 48, 570);
+		playerRow = 0;
+		playerColumn = 0;
+		maze.placeObjectAt(playerRow, playerColumn, player);
+		moveQueue.removeAll();
+	}
+
+	else
+	{
+		playerRow -= 1; 
+		maze.placeObjectAt(playerRow, playerColumn, player);
+	}
+
+}
+
+
+function moveLeft() {
+	if(playerColumn == 0)
+	{
+		//var timer = this.game.time.totalElapsedSeconds();
+		//var errorString = "Cannot move another row down.";
+		//game.debug.text(errorString, 48, 570);
+		playerRow = 0;
+		playerColumn = 0;
+		maze.placeObjectAt(playerRow, playerColumn, player);
+		moveQueue.removeAll();
+	}
+
+	else
+	{
+		playerColumn -= 1;  
+		maze.placeObjectAt(playerRow, playerColumn, player);
+	}
+
+}
+
+function moveRight() {
+
+	if(playerColumn == 9)
+	{
+		//var timer = this.game.time.totalElapsedSeconds();
+		//var errorString = "Cannot move another row down.";
+		//game.debug.text(errorString, 48, 570);
+		playerRow = 0;
+		playerColumn = 0;
+		maze.placeObjectAt(playerRow, playerColumn, player);
+		moveQueue.removeAll();
+	}
+
+	else
+	{
+		playerColumn += 1;  
+		maze.placeObjectAt(playerRow, playerColumn, player);
+	}
+
+}
+
+
+</script>
+
+</body>
+</html>
