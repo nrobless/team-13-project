@@ -1,5 +1,5 @@
-Ball.Game = function(game) {};
-Ball.Game.prototype = {
+Game.Game = function(game) {};
+Game.Game.prototype = {
 	create: function() {
 		this.add.sprite(0, 0, 'screen-bg');
 		this.add.sprite(0, 0, 'panel');
@@ -13,12 +13,12 @@ Ball.Game.prototype = {
 		this.level = 1;
 		this.maxLevels = 5;
 		this.movementForce = 10;
-		this.ballStartPos = { x: Ball._WIDTH*0.5, y: 450 };
+		this.GameStartPos = { x: Game._WIDTH*0.5, y: 450 };
 
-		this.pauseButton = this.add.button(Ball._WIDTH-8, 8, 'button-pause', this.managePause, this);
+		this.pauseButton = this.add.button(Game._WIDTH-8, 8, 'button-pause', this.managePause, this);
 		this.pauseButton.anchor.set(1,0);
 		this.pauseButton.input.useHandCursor = true;
-		this.audioButton = this.add.button(Ball._WIDTH-this.pauseButton.width-8*2, 8, 'button-audio', this.manageAudio, this);
+		this.audioButton = this.add.button(Game._WIDTH-this.pauseButton.width-8*2, 8, 'button-audio', this.manageAudio, this);
 		this.audioButton.anchor.set(1,0);
 		this.audioButton.input.useHandCursor = true;
 		this.audioButton.animations.add('true', [0], 10, true);
@@ -28,22 +28,22 @@ Ball.Game.prototype = {
 		this.levelText = this.game.add.text(120, 10, "Level: "+this.level+" / "+this.maxLevels, this.fontSmall);
 		this.totalTimeText = this.game.add.text(120, 30, "Total time: "+this.totalTimer, this.fontSmall);
 
-		this.hole = this.add.sprite(Ball._WIDTH*0.5, 90, 'hole');
+		this.hole = this.add.sprite(Game._WIDTH*0.5, 90, 'hole');
 		this.physics.enable(this.hole, Phaser.Physics.ARCADE);
 		this.hole.anchor.set(0.5);
 		this.hole.body.setSize(2, 2);
 
-		this.ball = this.add.sprite(this.ballStartPos.x, this.ballStartPos.y, 'ball');
-		this.ball.anchor.set(0.5);
-		this.physics.enable(this.ball, Phaser.Physics.ARCADE);
-		this.ball.body.setSize(18, 18);
-		this.ball.body.bounce.set(0.3, 0.3);
+		this.Game = this.add.sprite(this.GameStartPos.x, this.GameStartPos.y, 'Game');
+		this.Game.anchor.set(0.5);
+		this.physics.enable(this.Game, Phaser.Physics.ARCADE);
+		this.Game.body.setSize(18, 18);
+		this.Game.body.bounce.set(0.3, 0.3);
 
 		this.initLevels();
 		this.showLevel(1);
 		this.keys = this.game.input.keyboard.createCursorKeys();
 
-		Ball._player = this.ball;
+		Game._player = this.Game;
 		window.addEventListener("deviceorientation", this.handleOrientation, true);
 
 		this.time.events.loop(Phaser.Timer.SECOND, this.updateCounter, this);
@@ -52,9 +52,9 @@ Ball.Game.prototype = {
 		this.borderGroup.enableBody = true;
 		this.borderGroup.physicsBodyType = Phaser.Physics.ARCADE;
 		this.borderGroup.create(0, 50, 'border-horizontal');
-		this.borderGroup.create(0, Ball._HEIGHT-2, 'border-horizontal');
+		this.borderGroup.create(0, Game._HEIGHT-2, 'border-horizontal');
 		this.borderGroup.create(0, 0, 'border-vertical');
-		this.borderGroup.create(Ball._WIDTH-2, 0, 'border-vertical');
+		this.borderGroup.create(Game._WIDTH-2, 0, 'border-vertical');
 		this.borderGroup.setAll('body.immovable', true);
 		this.bounceSound = this.game.add.audio('audio-bounce');
 	},
@@ -121,7 +121,7 @@ Ball.Game.prototype = {
 	},
 	managePause: function() {
 		this.game.paused = true;
-		var pausedText = this.add.text(Ball._WIDTH*0.5, 250, "Game paused,\ntap anywhere to continue.", this.fontMessage);
+		var pausedText = this.add.text(Game._WIDTH*0.5, 250, "Game paused,\ntap anywhere to continue.", this.fontMessage);
 		pausedText.anchor.set(0.5);
 		this.input.onDown.add(function(){
 			pausedText.destroy();
@@ -134,20 +134,20 @@ Ball.Game.prototype = {
 	},
 	update: function() {
 		if(this.keys.left.isDown) {
-			this.ball.body.velocity.x -= this.movementForce;
+			this.Game.body.velocity.x -= this.movementForce;
 		}
 		else if(this.keys.right.isDown) {
-			this.ball.body.velocity.x += this.movementForce;
+			this.Game.body.velocity.x += this.movementForce;
 		}
 		if(this.keys.up.isDown) {
-			this.ball.body.velocity.y -= this.movementForce;
+			this.Game.body.velocity.y -= this.movementForce;
 		}
 		else if(this.keys.down.isDown) {
-			this.ball.body.velocity.y += this.movementForce;
+			this.Game.body.velocity.y += this.movementForce;
 		}
-		this.physics.arcade.collide(this.ball, this.borderGroup, this.wallCollision, null, this);
-		this.physics.arcade.collide(this.ball, this.levels[this.level-1], this.wallCollision, null, this);
-		this.physics.arcade.overlap(this.ball, this.hole, this.finishLevel, null, this);
+		this.physics.arcade.collide(this.Game, this.borderGroup, this.wallCollision, null, this);
+		this.physics.arcade.collide(this.Game, this.levels[this.level-1], this.wallCollision, null, this);
+		this.physics.arcade.overlap(this.Game, this.hole, this.finishLevel, null, this);
 	},
 	wallCollision: function() {
 		if(this.audioStatus) {
@@ -159,8 +159,8 @@ Ball.Game.prototype = {
 		var x = e.gamma; // range [-90,90], left-right
 		var y = e.beta;  // range [-180,180], top-bottom
 		var z = e.alpha; // range [0,360], up-down
-		Ball._player.body.velocity.x += x;
-		Ball._player.body.velocity.y += y*0.5;
+		Game._player.body.velocity.x += x;
+		Game._player.body.velocity.y += y*0.5;
 	},
 	finishLevel: function() {
 		if(this.level >= this.maxLevels) {
@@ -176,15 +176,15 @@ Ball.Game.prototype = {
 			this.timerText.setText("Time: "+this.timer);
 			this.totalTimeText.setText("Total time: "+this.totalTimer);
 			this.levelText.setText("Level: "+this.level+" / "+this.maxLevels);
-			this.ball.body.x = this.ballStartPos.x;
-			this.ball.body.y = this.ballStartPos.y;
-			this.ball.body.velocity.x = 0;
-			this.ball.body.velocity.y = 0;
+			this.Game.body.x = this.GameStartPos.x;
+			this.Game.body.y = this.GameStartPos.y;
+			this.Game.body.velocity.x = 0;
+			this.Game.body.velocity.y = 0;
 			this.showLevel();
 		}
 	},
 	render: function() {
-		// this.game.debug.body(this.ball);
+		// this.game.debug.body(this.Game);
 		// this.game.debug.body(this.hole);
 	}
 };

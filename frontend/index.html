@@ -3,20 +3,21 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>Cyber Orb demo</title>
+    <title>Dot Bot</title>
     <link rel="shortcut icon" href="favicon.png" type="image/x-icon" />
     <style>
     body {
         margin: 0;
-        background: #2B2E31 url(img/screen-bg.png) repeat;
+        background-color: #0C1C33;
     }
     </style>
-    <script src="cordova.js"></script>    
+    <script src="cordova.js"></script>
     <script src="src/phaser.js"></script>
+    <script src="src/phaser-input.js"></script>
     <script src="src/Boot.js"></script>
     <script src="src/Preloader.js"></script>
     <script src="src/MainMenu.js"></script>
-    <script src="src/Howto.js"></script>
+    <script src="src/Lobby.js"></script>
     <script src="src/Game.js"></script>
 </head>
 
@@ -28,12 +29,12 @@
         }, 5000, false);
     });
     (function() {
-        var game = new Phaser.Game(320, 480, Phaser.CANVAS, 'game');
-        game.state.add('Boot', Ball.Boot);
-        game.state.add('Preloader', Ball.Preloader);
-        game.state.add('MainMenu', Ball.MainMenu);
-        game.state.add('Howto', Ball.Howto);
-        game.state.add('Game', Ball.Game);
+        var game = new Phaser.Game(1080, 1920, Phaser.CANVAS, 'game');
+        game.state.add('Boot', Game.Boot);
+        game.state.add('Preloader', Game.Preloader);
+        game.state.add('MainMenu', Game.MainMenu);
+        game.state.add('Lobby', Game.Lobby);
+        game.state.add('Game', Game.Game);
         game.state.start('Boot');
     })();
     </script>

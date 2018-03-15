@@ -1,11 +1,10 @@
-var Ball = {
-	_WIDTH: 320,
-	_HEIGHT: 480
+var Game = {
+	_WIDTH: 1080,
+	_HEIGHT: 1920
 };
-Ball.Boot = function(game) {};
-Ball.Boot.prototype = {
+Game.Boot = function(game) {};
+Game.Boot.prototype = {
 	preload: function() {
-		this.load.image('preloaderBg', 'img/loading-bg.png');
 		this.load.image('preloaderBar', 'img/loading-bar.png');
 	},
 	create: function() {
