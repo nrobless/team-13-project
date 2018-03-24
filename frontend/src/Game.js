@@ -1,190 +1,275 @@
-Game.Game = function(game) {};
+Game.Game = function (game) {
+	let barriers;
+	let paths;
+	let player;
+
+	//Array to hold moves queue
+	let movesQueue;
+	//let movesQueue.length = 0;
+	//Hold queue images
+	let queues;
+	//Current move popped from the queue
+	let currentMove;
+
+	//Moves queue coordinates
+	let pX;
+	let pY;
+
+	//Players coordinates
+	//Also used by the go function to move the player in the game world.
+	let a;
+	let b;
+
+	//buttons
+	let resetButton;
+	let undoButon;
+	let goButton;
+	let left;
+	let right;
+	let up;
+	let down;
+
+	let tween;
+	let trophy;
+};
 Game.Game.prototype = {
-	create: function() {
-		this.add.sprite(0, 0, 'screen-bg');
-		this.add.sprite(0, 0, 'panel');
-		this.physics.startSystem(Phaser.Physics.ARCADE);
-		this.fontSmall = { font: "16px Arial", fill: "#e4beef" };
-		this.fontBig = { font: "24px Arial", fill: "#e4beef" };
-		this.fontMessage = { font: "24px Arial", fill: "#e4beef",  align: "center", stroke: "#320C3E", strokeThickness: 4 };
-		this.audioStatus = true;
-		this.timer = 0;
-		this.totalTimer = 0;
-		this.level = 1;
-		this.maxLevels = 5;
-		this.movementForce = 10;
-		this.GameStartPos = { x: Game._WIDTH*0.5, y: 450 };
+	create: function () {
+		this.add.sprite(0, 0, 'sky');
+		//this.physics.startSystem(Phaser.Physics.ARCADE);
+		this.bar = this.add.group();
+		this.bar.enableBody = true;
+		let p = this.bar.create(0, 1111, 'bar');
+		this.barriers = this.add.group();
+		this.paths = this.add.group();
+		this.queues = this.add.group();
+		this.trophy = this.add.group();
 
-		this.pauseButton = this.add.button(Game._WIDTH-8, 8, 'button-pause', this.managePause, this);
-		this.pauseButton.anchor.set(1,0);
-		this.pauseButton.input.useHandCursor = true;
-		this.audioButton = this.add.button(Game._WIDTH-this.pauseButton.width-8*2, 8, 'button-audio', this.manageAudio, this);
-		this.audioButton.anchor.set(1,0);
-		this.audioButton.input.useHandCursor = true;
-		this.audioButton.animations.add('true', [0], 10, true);
-		this.audioButton.animations.add('false', [1], 10, true);
-		this.audioButton.animations.play(this.audioStatus);
-		this.timerText = this.game.add.text(15, 15, "Time: "+this.timer, this.fontBig);
-		this.levelText = this.game.add.text(120, 10, "Level: "+this.level+" / "+this.maxLevels, this.fontSmall);
-		this.totalTimeText = this.game.add.text(120, 30, "Total time: "+this.totalTimer, this.fontSmall);
+		this.barriers.enableBody = true;
+		this.paths.enableBody = true;
+		this.trophy.enableBody = true;
 
-		this.hole = this.add.sprite(Game._WIDTH*0.5, 90, 'hole');
-		this.physics.enable(this.hole, Phaser.Physics.ARCADE);
-		this.hole.anchor.set(0.5);
-		this.hole.body.setSize(2, 2);
 
-		this.Game = this.add.sprite(this.GameStartPos.x, this.GameStartPos.y, 'Game');
-		this.Game.anchor.set(0.5);
-		this.physics.enable(this.Game, Phaser.Physics.ARCADE);
-		this.Game.body.setSize(18, 18);
-		this.Game.body.bounce.set(0.3, 0.3);
+		//Create a 10x10 grid
+		let grid = new Array(10);
+		for (let ab = 0; ab < 10; ab++) {
+			grid[ab] = new Array(10);
+		}
 
-		this.initLevels();
-		this.showLevel(1);
-		this.keys = this.game.input.keyboard.createCursorKeys();
-
-		Game._player = this.Game;
-		window.addEventListener("deviceorientation", this.handleOrientation, true);
-
-		this.time.events.loop(Phaser.Timer.SECOND, this.updateCounter, this);
-
-		this.borderGroup = this.add.group();
-		this.borderGroup.enableBody = true;
-		this.borderGroup.physicsBodyType = Phaser.Physics.ARCADE;
-		this.borderGroup.create(0, 50, 'border-horizontal');
-		this.borderGroup.create(0, Game._HEIGHT-2, 'border-horizontal');
-		this.borderGroup.create(0, 0, 'border-vertical');
-		this.borderGroup.create(Game._WIDTH-2, 0, 'border-vertical');
-		this.borderGroup.setAll('body.immovable', true);
-		this.bounceSound = this.game.add.audio('audio-bounce');
-	},
-	initLevels: function() {
-		this.levels = [];
-		this.levelData = [
-			[
-				{ x: 96, y: 224, t: 'w' }
-			],
-			[
-				{ x: 72, y: 320, t: 'w' },
-				{ x: 200, y: 320, t: 'h' },
-				{ x: 72, y: 150, t: 'w' }
-			],
-			[
-				{ x: 64, y: 352, t: 'h' },
-				{ x: 224, y: 352, t: 'h' },
-				{ x: 0, y: 240, t: 'w' },
-				{ x: 128, y: 240, t: 'w' },
-				{ x: 200, y: 52, t: 'h' }
-			],
-			[
-				{ x: 78, y: 352, t: 'h' },
-				{ x: 78, y: 320, t: 'w' },
-				{ x: 0, y: 240, t: 'w' },
-				{ x: 192, y: 240, t: 'w' },
-				{ x: 30, y: 150, t: 'w' },
-				{ x: 158, y: 150, t: 'w' }
-			],
-			[
-				{ x: 188, y: 352, t: 'h' },
-				{ x: 92, y: 320, t: 'w' },
-				{ x: 0, y: 240, t: 'w' },
-				{ x: 128, y: 240, t: 'w' },
-				{ x: 256, y: 240, t: 'h' },
-				{ x: 180, y: 52, t: 'h' },
-				{ x: 52, y: 148, t: 'w' }
-			]
-		];
-		for(var i=0; i<this.maxLevels; i++) {
-			var newLevel = this.add.group();
-			newLevel.enableBody = true;
-			newLevel.physicsBodyType = Phaser.Physics.ARCADE;
-			for(var e=0; e<this.levelData[i].length; e++) {
-				var item = this.levelData[i][e];
-				newLevel.create(item.x, item.y, 'element-'+item.t);
+		let randomPathX;
+		let randomPathY;
+		do {
+			for (let nx = 0; nx < 10; nx++) {
+				for (let mx = 0; mx < 10; mx++) {
+					grid[nx][mx] = 0;
+				}
 			}
-			newLevel.setAll('body.immovable', true);
-			newLevel.visible = false;
-			this.levels.push(newLevel);
+			grid[0][0] = 1;
+			randomPathX = 0;
+			randomPathY = 0;
+			for (let v = 0; v < 36; v++) {
+				let randGen = Math.floor(Math.random() * 4);
+				if (randGen == 0) {
+					if (randomPathY > 0 && grid[randomPathX][randomPathY - 1] != 2) {
+						randomPathY--;
+						grid[randomPathX][randomPathY] = 2;
+					}
+				} else if (randGen == 1) {
+					if (randomPathX < 9 && grid[randomPathX + 1][randomPathY] != 2) {
+						randomPathX++;
+						grid[randomPathX][randomPathY] = 2;
+					}
+				} else if (randGen == 2) {
+					if (randomPathY < 9 && grid[randomPathX][randomPathY + 1] != 2) {
+						randomPathY++;
+						grid[randomPathX][randomPathY] = 2;
+					}
+				} else if (randGen == 3) {
+					if (randomPathX > 0 && grid[randomPathX - 1][randomPathY] != 2) {
+						randomPathX--;
+						grid[randomPathX][randomPathY] = 2;
+					}
+				}
+			}
+		} while (randomPathX < 6 || randomPathY < 6);
+
+
+
+
+		//Fill the grid with randomly created paths.// May no lead to the trophy
+		for (var v = 0; v < 10; v++) {
+			for (var w = 0; w < 10; w++) {
+				let rand = Math.floor(Math.random() * 100);
+				if (rand % 2 == 0) {
+					grid[v][w] = 1;
+				}
+			}
+		}
+
+
+
+		for (var x = 0; x < 10; x++)
+			for (var y = 0; y < 10; y++) {
+				if (grid[x][y] == 1 || grid[x][y] == 2) {
+					let path = this.paths.create(x * 108, y * 108 + 108, 'path');
+					path.body.immovable = true;
+				} else {
+					let barrier = this.barriers.create(x * 108, y * 108 + 108, 'barrier');
+					barrier.body.immovable = true;
+				}
+			}
+		let t = this.trophy.create(randomPathX * 108, randomPathY * 108 + 108, 'goal');
+
+
+		this.a = 56.25;
+		this.b = 164.25;
+		this.player = this.add.sprite(this.a, this.b, 'star');
+		this.player.anchor.setTo(0.5);
+		this.physics.arcade.enable(this.player);
+		this.player.enableBody = true;
+		this.player.body.immovable = true;
+		this.player.body.gravity.y = 0;
+		this.player.body.collideWorldBounds = true;
+		this.player.body.moves = true;
+
+		//Removes all moves already in the queue
+		this.resetButton = this.add.button(101.25, 1596, 'resetButton', this.reset);
+
+		//Removes the last move added to the queue
+		this.undoButon = this.add.button(425.25, 1596, 'undoButon', this.undo);
+
+		/*
+		Player moves along a legitimate path. 
+		Hitting a barrier moves the player to the start 
+		and undo all moves in the queue
+		*/
+		this.goButton = this.add.button(749.25, 1596, 'goButton', this.go);
+
+		//Adding moves control to the game
+		this.left = this.add.button(157.5, 1812, 'goLeft', this.addQ);
+		this.right = this.add.button(373.5, 1812, 'goRight', this.addQ);
+		this.up = this.add.button(589.5, 1812, 'goUp', this.addQ);
+		this.down = this.add.button(805.5, 1812, 'goDown', this.addQ);
+
+		this.pX = 0;
+		this.pY = 1200;
+	},
+	addQ: function () {
+
+		if (this.movesQueue.length == 30) {
+			return;
+		}
+		if (this.key == "goLeft") {
+			if (this.movesQueue.length % 10 == 0 && this.movesQueue.length > 9) {
+				this.pY += 108;
+				this.pX = 0;
+			}
+			this.movesQueue.push(1);
+			let lT = this.queues.create(this.pX, this.pY, 'qLeft');
+			this.pX += 108;
+		} else if (this.key == "goRight") {
+			if (this.movesQueue.length % 10 == 0 && this.movesQueue.length > 9) {
+				this.pY += 108;
+				this.pX = 0;
+			}
+			this.movesQueue.push(2);
+			let rT = this.queues.create(this.pX, this.pY, 'qRight');
+			this.pX += 108;
+		} else if (this.key == "goUp") {
+			if (this.movesQueue.length % 10 == 0 && this.movesQueue.length > 9) {
+				this.pY += 108;
+				this.pX = 0;
+			}
+			this.movesQueue.push(3);
+			let uP = this.queues.create(this.pX, this.pY, 'qUp');
+			this.pX += 108;
+		} else if (this.key == "goDown") {
+			if (this.movesQueue.length % 10 == 0 && this.movesQueue.length > 9) {
+				this.pY += 108;
+				this.pX = 0;
+			}
+			this.movesQueue.push(4);
+			let dN = this.queues.create(this.pX, this.pY, 'qDown');
+			this.pX += 108;
 		}
 	},
-	showLevel: function(level) {
-		var lvl = level | this.level;
-		if(this.levels[lvl-2]) {
-			this.levels[lvl-2].visible = false;
+	/*update: function () {
+		this.physics.arcade.collide(this.player, this.bar);
+		this.physics.arcade.overlap(this.player, this.bar, this.stp, null, this);
+
+		this.physics.arcade.collide(this.player, this.barriers);
+		this.physics.arcade.overlap(this.player, this.barriers, this.stp, null, this);
+
+		this.physics.arcade.collide(this.player, this.trophy);
+		this.physics.arcade.overlap(this.player, this.trophy, this.stp, null, this);
+	},*/
+	go: function () {
+
+		this.tween = this.add.this.tween(this.player);
+		while (this.movesQueue.length > 0) {
+			var m = this.movesQueue.shift();
+
+			if (m == 1) {
+				this.a -= 108;
+				this.tween.to({
+					x: this.a,
+					y: this.b
+				}, 200, "Linear");
+			} else if (m == 2) {
+				this.a += 108;
+				this.tween.to({
+					x: this.a,
+					y: this.b
+				}, 200, "Linear");
+			} else if (m == 3) {
+				this.b -= 108;
+				this.tween.to({
+					x: this.a,
+					y: this.b
+				}, 200, "Linear");
+
+			} else if (m == 4) {
+				this.b += 108;
+				this.tween.to({
+					x: this.a,
+					y: this.b
+				}, 200, "Linear");
+			}
 		}
-		this.levels[lvl-1].visible = true;
+		this.pX = 0;
+		this.pY = 375;
+
+		this.tween.start();
+		this.tween.onComplete.add(this.stp, this);
 	},
-	updateCounter: function() {
-		this.timer++;
-		this.timerText.setText("Time: "+this.timer);
-		this.totalTimeText.setText("Total time: "+(this.totalTimer+this.timer));
+	reset: function () {
+		this.queues.removeAll();
+		this.pX = 0;
+		this.pY = 375;
+		this.a = 18.75;
+		this.b = 18.75;
+		this.movesQueue.length = 0;
+		this.player.x = this.a;
+		this.player.y = this.b;
+		this.player.anchor.setTo(0.5);
 	},
-	managePause: function() {
-		this.game.paused = true;
-		var pausedText = this.add.text(Game._WIDTH*0.5, 250, "Game paused,\ntap anywhere to continue.", this.fontMessage);
-		pausedText.anchor.set(0.5);
-		this.input.onDown.add(function(){
-			pausedText.destroy();
-			this.game.paused = false;
-		}, this);
+	undo: function () {
+
+		this.queues.removeChild(queues.getTop());
+		this.pX -= 108;
+		this.movesQueue.pop();
 	},
-	manageAudio: function() {
-		this.audioStatus =! this.audioStatus;
-		this.audioButton.animations.play(this.audioStatus);
-	},
-	update: function() {
-		if(this.keys.left.isDown) {
-			this.Game.body.velocity.x -= this.movementForce;
-		}
-		else if(this.keys.right.isDown) {
-			this.Game.body.velocity.x += this.movementForce;
-		}
-		if(this.keys.up.isDown) {
-			this.Game.body.velocity.y -= this.movementForce;
-		}
-		else if(this.keys.down.isDown) {
-			this.Game.body.velocity.y += this.movementForce;
-		}
-		this.physics.arcade.collide(this.Game, this.borderGroup, this.wallCollision, null, this);
-		this.physics.arcade.collide(this.Game, this.levels[this.level-1], this.wallCollision, null, this);
-		this.physics.arcade.overlap(this.Game, this.hole, this.finishLevel, null, this);
-	},
-	wallCollision: function() {
-		if(this.audioStatus) {
-			this.bounceSound.play();
-		}
-	},
-	handleOrientation: function(e) {
-		// Device Orientation API
-		var x = e.gamma; // range [-90,90], left-right
-		var y = e.beta;  // range [-180,180], top-bottom
-		var z = e.alpha; // range [0,360], up-down
-		Game._player.body.velocity.x += x;
-		Game._player.body.velocity.y += y*0.5;
-	},
-	finishLevel: function() {
-		if(this.level >= this.maxLevels) {
-			this.totalTimer += this.timer;
-			alert('Congratulations, game completed!\nTotal time of play: '+this.totalTimer+' seconds!');
-			this.game.state.start('MainMenu');
-		}
-		else {
-			alert('Congratulations, level '+this.level+' completed!');
-			this.totalTimer += this.timer;
-			this.timer = 0;
-			this.level++;
-			this.timerText.setText("Time: "+this.timer);
-			this.totalTimeText.setText("Total time: "+this.totalTimer);
-			this.levelText.setText("Level: "+this.level+" / "+this.maxLevels);
-			this.Game.body.x = this.GameStartPos.x;
-			this.Game.body.y = this.GameStartPos.y;
-			this.Game.body.velocity.x = 0;
-			this.Game.body.velocity.y = 0;
-			this.showLevel();
-		}
-	},
-	render: function() {
-		// this.game.debug.body(this.Game);
-		// this.game.debug.body(this.hole);
+	stp: function () {
+
+		this.queues.removeAll();
+		this.tween.stop();
+		this.tweens.removeAll();
+		//tween = null;
+		this.movesQueue.length = 0;
+		this.queues.length = 0;
+		this.a = 18.75;
+		this.b = 18.75;
+		this.player.x = this.a;
+		this.player.y = this.a;
+		this.window.location.reload(true);
 	}
 };

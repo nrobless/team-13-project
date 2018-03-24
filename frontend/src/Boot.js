@@ -2,12 +2,14 @@ var Game = {
 	_WIDTH: 1080,
 	_HEIGHT: 1920
 };
-Game.Boot = function(game) {};
+Game.Boot = function (game) {};
 Game.Boot.prototype = {
-	preload: function() {
+
+	preload: function () {
 		this.load.image('preloaderBar', 'img/loading-bar.png');
 	},
-	create: function() {
+	create: function () {
+		this.physics.startSystem(Phaser.Physics.ARCADE);
 		this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
 		this.game.scale.pageAlignHorizontally = true;
 		this.game.scale.pageAlignVertically = true;
